@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Icon components (or import from lucide-react if available)
 const Zap = ({ className }) => (
@@ -21,6 +22,13 @@ const Award = ({ className }) => (
 );
 
 export default function NeonDefenderGame() {
+  const navigate = useNavigate();
+  const Home = ({ className }) => (
+  <svg className={className} width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+    <polyline points="9 22 9 12 15 12 15 22"/>
+  </svg>
+);
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('menu');
   const [score, setScore] = useState(0);
@@ -295,6 +303,13 @@ export default function NeonDefenderGame() {
   if (gameState === 'menu') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-black flex items-center justify-center">
+        <button
+          onClick={() => navigate('/')}
+          className="fixed top-4 left-4 bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-700 z-50"
+        > 
+          <Home className="w-5 h-5" />
+              Home
+        </button>
         <div className="text-center">
           <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-purple-400 mb-8 animate-pulse">
             NEON DEFENDER

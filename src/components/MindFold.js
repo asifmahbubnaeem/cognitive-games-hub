@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import * as Tone from 'tone';
 
 // --- Configuration ---
@@ -199,6 +200,7 @@ const CubeOption = ({ faces, isSelected, onClick, isCorrect }) => {
 
 // --- Main App Component ---
 export default function MindFoldGame() {
+    const navigate = useNavigate();
     const [gameState, setGameState] = useState('start'); // start, playing, result
     const [options, setOptions] = useState([]);
     const [correctAnswer, setCorrectAnswer] = useState([]);
@@ -379,7 +381,6 @@ export default function MindFoldGame() {
             <style>{`@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap'); body { font-family: 'Roboto', sans-serif; }`}</style>
 
             <header className="w-full max-w-2xl flex justify-center items-center relative mb-4">
-                {/* Home Button */}
                 <a 
                     href="/"
                     className="absolute left-0 top-1/2 -translate-y-1/2 px-4 py-2 bg-gray-700 text-white text-sm font-bold rounded-lg shadow-lg hover:bg-gray-600 transition-all"

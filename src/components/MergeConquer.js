@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 // Icon components
 const Sparkles = ({ className }) => (
@@ -119,6 +120,7 @@ const getPerformanceFeedback = (score, merges, tiles) => {
 };
 
 export default function MergeConquerGame() {
+  const navigate = useNavigate();
   const [gameState, setGameState] = useState('menu');
   const [gold, setGold] = useState(40);
   const [tiles, setTiles] = useState(() => 
@@ -334,7 +336,15 @@ export default function MergeConquerGame() {
 
   if (gameState === 'menu') {
     return (
+
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        <button
+            onClick={() => navigate('/')}
+            className="fixed top-4 left-4 bg-slate-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-slate-700 z-50"
+          >
+            <Home className="w-5 h-5" />
+            Home
+      </button>
         <div className="text-center max-w-2xl">
           <h1 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mb-6 flex items-center justify-center gap-3">
             <Sparkles className="text-yellow-400" />
