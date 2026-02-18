@@ -292,6 +292,31 @@ export default function NeonDefenderGame() {
     };
   }, [gameState, gameSpeed, score]);
 
+  // Record game progress when game ends
+  useEffect(() => {
+    if (gameState === 'gameover' && !recordedRef.current) {
+      recordedRef.current = true;
+      recordPlayedGame('neon-defender', score, { 
+        difficulty: 'beginner', 
+        accuracy: 0,
+        perfect: false
+      });
+    }
+    if (gameState === 'menu') {
+      recordedRef.current = false;
+    }
+  }, [gameState, score]);
+
+  // Persist high score when game ends
+  useEffect(() => {
+    if (gameState === 'gameover') {
+      const isNew = saveHighScore('neon-defender', score);
+      if (isNew) {
+        setHighScore(score);
+      }
+    }
+  }, [gameState, score]);
+
   const startGame = () => {
     gameRef.current = {
       player: { x: 400, y: 300, radius: 15, speed: 6 },
@@ -361,31 +386,6 @@ export default function NeonDefenderGame() {
       </div>
     );
   }
-
-  // Record game progress when game ends
-  useEffect(() => {
-    if (gameState === 'gameover' && !recordedRef.current) {
-      recordedRef.current = true;
-      recordPlayedGame('neon-defender', score, { 
-        difficulty: 'beginner', 
-        accuracy: 0,
-        perfect: false
-      });
-    }
-    if (gameState === 'menu') {
-      recordedRef.current = false;
-    }
-  }, [gameState, score]);
-
-  // Persist high score when game ends
-  useEffect(() => {
-    if (gameState === 'gameover') {
-      const isNew = saveHighScore('neon-defender', score);
-      if (isNew) {
-        setHighScore(score);
-      }
-    }
-  }, [gameState, score]);
 
   if (gameState === 'gameover') {
     return (
