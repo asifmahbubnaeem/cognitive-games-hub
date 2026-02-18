@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Brain, Target, Zap, Trophy, Clock, Users, Medal } from 'lucide-react';
 import { recordPlayedGame } from '../utils/userProgress';
+import { getHighScore, setHighScore as saveHighScore } from '../utils/highScores';
 
 const COLORS = [
   { name: 'RED', value: '#ef4444', letters: 3 },
@@ -27,6 +28,12 @@ export default function FocusFlow() {
   const recordedRef = useRef(false);
 
   useEffect(() => {
+    // Load persisted high score
+    const stored = getHighScore('focus-flow');
+    if (stored > 0) setHighScore(stored);
+  }, []);
+
+  useEffect(() => {
     if (gameState === 'gameover' && !recordedRef.current) {
       recordedRef.current = true;
       const accuracy = totalClicks > 0 ? Math.round((correctClicks / totalClicks) * 100) : 0;
@@ -35,6 +42,16 @@ export default function FocusFlow() {
     }
     if (gameState === 'menu') recordedRef.current = false;
   }, [gameState, score, totalClicks, correctClicks]);
+
+  // Persist high score when game ends
+  useEffect(() => {
+    if (gameState === 'gameover') {
+      const isNew = saveHighScore('focus-flow', score);
+      if (isNew) {
+        setHighScore(score);
+      }
+    }
+  }, [gameState, score]);
 
   const playCorrectSound = () => {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -248,7 +265,6 @@ export default function FocusFlow() {
   }
 
   if (gameState === 'gameover') {
-    if (score > highScore) setHighScore(score);
     const accuracy = totalClicks > 0 ? Math.round((correctClicks / totalClicks) * 100) : 0;
 
     return (

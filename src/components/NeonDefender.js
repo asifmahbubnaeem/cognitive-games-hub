@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { recordPlayedGame } from '../utils/userProgress';
+import { getHighScore, setHighScore as saveHighScore } from '../utils/highScores';
 
 // Icon components (or import from lucide-react if available)
 const Zap = ({ className }) => (
@@ -49,6 +50,12 @@ export default function NeonDefenderGame() {
     keys: {},
     spawnTimer: 0
   });
+
+  useEffect(() => {
+    // Load persisted high score
+    const stored = getHighScore('neon-defender');
+    if (stored > 0) setHighScore(stored);
+  }, []);
 
   useEffect(() => {
     if (gameState !== 'playing') return;
@@ -370,10 +377,17 @@ export default function NeonDefenderGame() {
     }
   }, [gameState, score]);
 
-  if (gameState === 'gameover') {
-    if (score > highScore) {
-      setHighScore(score);
+  // Persist high score when game ends
+  useEffect(() => {
+    if (gameState === 'gameover') {
+      const isNew = saveHighScore('neon-defender', score);
+      if (isNew) {
+        setHighScore(score);
+      }
     }
+  }, [gameState, score]);
+
+  if (gameState === 'gameover') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-900 via-purple-900 to-black flex items-center justify-center">
         <div className="text-center">

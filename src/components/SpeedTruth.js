@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Brain, Zap, Trophy, Clock, Target, TrendingUp, AlertCircle } from 'lucide-react';
 import { recordPlayedGame } from '../utils/userProgress';
+import { getHighScore, setHighScore as saveHighScore } from '../utils/highScores';
 
 // ============================================
 // FACTS DATABASE - Easy to Update!
@@ -124,11 +125,27 @@ export default function SpeedTruth() {
   const recordedRef = useRef(false);
 
   useEffect(() => {
+    // Load persisted high score
+    const stored = getHighScore('speed-truth');
+    if (stored > 0) setHighScore(stored);
+  }, []);
+
+  useEffect(() => {
     if (gameState === 'gameover' && !recordedRef.current) {
       recordedRef.current = true;
       recordPlayedGame('speed-truth', score);
     }
     if (gameState === 'menu') recordedRef.current = false;
+  }, [gameState, score]);
+
+  // Persist high score when game ends
+  useEffect(() => {
+    if (gameState === 'gameover') {
+      const isNew = saveHighScore('speed-truth', score);
+      if (isNew) {
+        setHighScore(score);
+      }
+    }
   }, [gameState, score]);
 
   const playCorrectSound = () => {
@@ -484,7 +501,6 @@ export default function SpeedTruth() {
   }
 
   if (gameState === 'gameover') {
-    if (score > highScore) setHighScore(score);
     const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
     const avgReaction = reactionTimes.length > 0 
       ? Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)

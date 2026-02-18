@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Brain, Clock, Trophy, Target, TrendingUp, Zap } from 'lucide-react';
 import { recordPlayedGame } from '../utils/userProgress';
+import { getHighScore, setHighScore as saveHighScore } from '../utils/highScores';
 
 const SHAPES = [
   { name: 'circle', color: '#ef4444', render: () => '●' },
@@ -135,6 +136,12 @@ export default function SpeedMatch() {
   };
 
   useEffect(() => {
+    // Load persisted high score
+    const stored = getHighScore('speed-match');
+    if (stored > 0) setHighScore(stored);
+  }, []);
+
+  useEffect(() => {
     if (gameState === 'playing') {
       timerRef.current = setInterval(() => {
         setTimeLeft(t => {
@@ -188,6 +195,16 @@ export default function SpeedMatch() {
       recordedRef.current = false;
     }
   }, [gameState, score, totalAnswers, correctAnswers]);
+
+  // Persist high score when game ends
+  useEffect(() => {
+    if (gameState === 'gameover') {
+      const isNew = saveHighScore('speed-match', score);
+      if (isNew) {
+        setHighScore(score);
+      }
+    }
+  }, [gameState, score]);
 
   const startGame = () => {
     setScore(0);
@@ -269,7 +286,6 @@ export default function SpeedMatch() {
   }
 
   if (gameState === 'gameover') {
-    if (score > highScore) setHighScore(score);
     const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
 
     return (
