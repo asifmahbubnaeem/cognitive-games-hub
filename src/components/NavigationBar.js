@@ -3,10 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { Brain, Flame, Trophy, Settings, BarChart3, Award } from 'lucide-react';
 import { getStreak, getOverallScore } from '../utils/userProgress';
 import { getCurrentLevel } from '../utils/leveling';
+import { usePremium } from '../contexts/PremiumContext';
+import PremiumBadge from './premium/PremiumBadge';
 
 export default function NavigationBar() {
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const { isPremium } = usePremium();
 
   const streak = getStreak();
   const overallScore = getOverallScore();
@@ -22,6 +25,7 @@ export default function NavigationBar() {
         >
           <Brain className="w-8 h-8 text-cyan-400 flex-shrink-0" />
           <span className="text-xl font-bold hidden sm:inline">Cognitive Hub</span>
+          {isPremium && <PremiumBadge size="sm" />}
         </Link>
 
         <div className="flex items-center gap-2 sm:gap-3">

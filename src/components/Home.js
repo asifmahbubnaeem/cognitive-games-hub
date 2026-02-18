@@ -1,47 +1,78 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, Flame, Trophy, Gamepad2, ChevronRight, BarChart3, Award } from 'lucide-react';
+import { Brain, Flame, Trophy, Gamepad2, ChevronRight, BarChart3, Award, Lock } from 'lucide-react';
 import { games, getGameById, GAME_CATEGORIES } from '../config/games';
 import { getStreak, getOverallScore, getGamesPlayedToday, getRecentlyPlayed } from '../utils/userProgress';
 import { getCurrentLevel } from '../utils/leveling';
 import { getUnlockedAchievements } from '../utils/achievements';
+import { usePremium } from '../contexts/PremiumContext';
+import { canPlayGame } from '../utils/premium';
+import PremiumBadge from './premium/PremiumBadge';
+import PremiumGate from './premium/PremiumGate';
+import BannerAd from './ads/BannerAd';
 
 function GameCard({ game, compact = false }) {
-  return (
-    <Link to={game.path} className="group block">
-      <div
-        className={`bg-slate-800 rounded-2xl border-4 border-transparent hover:border-white transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl h-full flex flex-col ${compact ? 'p-5' : 'p-8'}`}
-      >
-        <div className={`rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center mb-4 group-hover:rotate-6 transition-transform ${compact ? 'w-14 h-14' : 'w-20 h-20 mb-6'}`}>
-          <game.icon className={compact ? 'w-8 h-8 text-white' : 'w-12 h-12 text-white'} />
+  const { isPremium } = usePremium();
+  const isLocked = !isPremium && !canPlayGame(game.id);
+
+  const cardContent = (
+    <div
+      className={`bg-slate-800 rounded-2xl border-4 border-transparent hover:border-white transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl h-full flex flex-col relative ${compact ? 'p-5' : 'p-8'} ${isLocked ? 'opacity-75' : ''}`}
+    >
+      {isLocked && (
+        <div className="absolute top-2 right-2">
+          <Lock className="w-5 h-5 text-yellow-400" />
         </div>
-        <h2 className={`font-bold bg-gradient-to-r ${game.color} bg-clip-text text-transparent ${compact ? 'text-xl mb-1' : 'text-3xl mb-2'}`}>
+      )}
+      <div className={`rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center mb-4 group-hover:rotate-6 transition-transform ${compact ? 'w-14 h-14' : 'w-20 h-20 mb-6'}`}>
+        <game.icon className={compact ? 'w-8 h-8 text-white' : 'w-12 h-12 text-white'} />
+      </div>
+      <div className="flex items-start justify-between gap-2 mb-1">
+        <h2 className={`font-bold bg-gradient-to-r ${game.color} bg-clip-text text-transparent ${compact ? 'text-xl' : 'text-3xl'}`}>
           {game.title}
         </h2>
-        <p className={`text-gray-400 ${compact ? 'text-sm mb-2' : 'text-xl mb-4'}`}>{game.subtitle}</p>
-        {!compact && (
-          <>
-            <p className="text-gray-300 mb-6 flex-grow line-clamp-2">{game.description}</p>
-            <div className="flex flex-wrap gap-2 mb-4">
-              {game.skills.slice(0, 3).map((skill, index) => (
-                <span key={index} className="px-3 py-1 bg-slate-700 text-cyan-400 text-sm rounded-full">
-                  {skill}
-                </span>
-              ))}
-            </div>
-          </>
-        )}
-        <span className={`inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r ${game.color} text-white font-bold rounded-xl transition-shadow hover:shadow-lg ${compact ? 'py-2.5 text-sm' : 'py-4 text-lg'}`}>
-          {compact ? 'Play' : 'PLAY NOW'}
-          <ChevronRight className="w-4 h-4" />
-        </span>
+        {isLocked && <PremiumBadge size="sm" />}
       </div>
+      <p className={`text-gray-400 ${compact ? 'text-sm mb-2' : 'text-xl mb-4'}`}>{game.subtitle}</p>
+      {!compact && (
+        <>
+          <p className="text-gray-300 mb-6 flex-grow line-clamp-2">{game.description}</p>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {game.skills.slice(0, 3).map((skill, index) => (
+              <span key={index} className="px-3 py-1 bg-slate-700 text-cyan-400 text-sm rounded-full">
+                {skill}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+      <span className={`inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r ${game.color} text-white font-bold rounded-xl transition-shadow hover:shadow-lg ${compact ? 'py-2.5 text-sm' : 'py-4 text-lg'}`}>
+        {isLocked ? 'PREMIUM REQUIRED' : compact ? 'Play' : 'PLAY NOW'}
+        {!isLocked && <ChevronRight className="w-4 h-4" />}
+      </span>
+    </div>
+  );
+
+  if (isLocked) {
+    return (
+      <PremiumGate gameId={game.id}>
+        <div className="group block cursor-pointer">
+          {cardContent}
+        </div>
+      </PremiumGate>
+    );
+  }
+
+  return (
+    <Link to={game.path} className="group block">
+      {cardContent}
     </Link>
   );
 }
 
 export default function Home() {
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const { isPremium, remainingGames } = usePremium();
 
   const streak = getStreak();
   const overallScore = getOverallScore();
@@ -72,6 +103,9 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 pt-6 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* Banner Ad - Top */}
+        <BannerAd position="top" />
+        
         {/* Hero + Quick Stats */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center gap-4 mb-4">
@@ -105,6 +139,11 @@ export default function Home() {
               <Gamepad2 className="w-5 h-5 text-cyan-400" />
               <span className="text-white font-semibold tabular-nums">{gamesToday}</span>
               <span className="text-gray-400 text-sm hidden sm:inline">today</span>
+              {!isPremium && (
+                <span className="text-xs text-orange-400 ml-1">
+                  ({remainingGames} left)
+                </span>
+              )}
             </div>
             <Link
               to="/achievements"
@@ -181,6 +220,9 @@ export default function Home() {
           <p className="text-lg">Train daily for 10–15 minutes to see cognitive improvements.</p>
           <p className="text-sm mt-2">All games are designed based on cognitive science research.</p>
         </div>
+        
+        {/* Banner Ad - Bottom */}
+        <BannerAd position="bottom" />
       </div>
     </div>
   );

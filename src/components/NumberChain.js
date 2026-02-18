@@ -5,6 +5,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Brain, Zap, Trophy, Target, Clock, TrendingUp, Award, Link } from 'lucide-react';
 import { recordPlayedGame } from '../utils/userProgress';
 import Tutorial, { createNumberChainTutorial } from './onboarding/Tutorial';
+import { usePremium } from '../contexts/PremiumContext';
+import { canPlayMoreGames } from '../utils/premium';
+import DailyLimitModal from './premium/DailyLimitModal';
 
 const OPERATIONS = [
   { symbol: '+', name: 'Add', fn: (a, b) => a + b },
@@ -49,6 +52,8 @@ export default function NumberChain() {
   const timeoutTriggeredRef = useRef(false);
   const recordedRef = useRef(false);
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showDailyLimit, setShowDailyLimit] = useState(false);
+  const { isPremium } = usePremium();
 
   useEffect(() => {
     // Check if user has seen tutorial before
@@ -238,6 +243,12 @@ export default function NumberChain() {
   }, [gameState, showingChain, chain]);
 
   const startGame = () => {
+    // Check daily limit for free users
+    if (!isPremium && !canPlayMoreGames()) {
+      setShowDailyLimit(true);
+      return;
+    }
+
     setScore(0);
     setLives(3);
     setStreak(0);
@@ -361,6 +372,12 @@ export default function NumberChain() {
             steps={createNumberChainTutorial()}
             onComplete={handleTutorialComplete}
             onSkip={handleTutorialSkip}
+          />
+        )}
+        {showDailyLimit && (
+          <DailyLimitModal
+            onClose={() => setShowDailyLimit(false)}
+            onUpgrade={() => setShowDailyLimit(false)}
           />
         )}
         <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">

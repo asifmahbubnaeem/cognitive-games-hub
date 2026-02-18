@@ -1,0 +1,16 @@
+# AdSense Configuration Example
+# Copy these values to src/utils/ads.js
+
+# Your Publisher ID (from AdSense dashboard)
+ADSENSE_PUBLISHER_ID=ca-pub-1234567890123456
+
+# Your Ad Unit IDs (from AdSense → Ads → By ad unit)
+AD_UNIT_BANNER=9876543210
+AD_UNIT_INTERSTITIAL=1234567890
+AD_UNIT_REWARDED=5555555555
+
+# Instructions:
+# 1. Get your Publisher ID from AdSense dashboard
+# 2. Create 3 ad units in AdSense (Banner, Interstitial, Rewarded)
+# 3. Copy the IDs above
+# 4. Edit src/utils/ads.js and replace the placeholder values

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { PremiumProvider } from './contexts/PremiumContext';
 import NavigationBar from './components/NavigationBar';
 import OnboardingWrapper from './components/OnboardingWrapper';
 import AchievementManager from './components/progress/AchievementManager';
@@ -23,12 +24,13 @@ import MergeConquerGame from './components/MergeConquer';
 
 function App() {
   return (
-    <Router>
-      <NavigationBar />
-      <AchievementManager />
-      <main className="pt-14 min-h-screen">
-        <OnboardingWrapper>
-          <Routes>
+    <PremiumProvider>
+      <Router>
+        <NavigationBar />
+        <AchievementManager />
+        <main className="pt-14 min-h-screen">
+          <OnboardingWrapper>
+            <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/progress" element={<ProgressDashboard />} />
             <Route path="/achievements" element={<AchievementsPage />} />
@@ -46,10 +48,11 @@ function App() {
         <Route path="/mind-fold" element={<MindFoldGame />} />
         <Route path="/neon-defender" element={<NeonDefenderGame />} />
         <Route path="/merge-conquer" element={<MergeConquerGame />} />
-          </Routes>
-        </OnboardingWrapper>
-      </main>
-    </Router>
+            </Routes>
+          </OnboardingWrapper>
+        </main>
+      </Router>
+    </PremiumProvider>
   );
 }
 

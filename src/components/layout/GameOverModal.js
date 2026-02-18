@@ -1,5 +1,7 @@
-import React from 'react';
-import { Trophy, RotateCcw, Home, Share2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Trophy, RotateCcw, Home, Share2, Play } from 'lucide-react';
+import { usePremium } from '../../contexts/PremiumContext';
+import RewardedVideoAd from '../ads/RewardedVideoAd';
 
 export default function GameOverModal({
   score,
@@ -10,8 +12,28 @@ export default function GameOverModal({
   onHome,
   onShare,
 }) {
+  const { isPremium } = usePremium();
+  const [showRewardedAd, setShowRewardedAd] = useState(false);
+
+  const handleRewardEarned = () => {
+    // Refresh premium context to update remaining games
+    if (onPlayAgain) {
+      setTimeout(() => {
+        onPlayAgain();
+      }, 500);
+    }
+    setShowRewardedAd(false);
+  };
+
   return (
-    <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <>
+      <RewardedVideoAd
+        show={showRewardedAd}
+        onClose={() => setShowRewardedAd(false)}
+        onReward={handleRewardEarned}
+        rewardText="1 extra game play"
+      />
+      <div className="fixed inset-0 z-30 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
       <div className="bg-slate-800 rounded-2xl shadow-2xl border-2 border-slate-600 max-w-md w-full p-6 sm:p-8">
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-cyan-500 to-purple-500 mb-4">
@@ -48,12 +70,22 @@ export default function GameOverModal({
           </div>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-3">
+          {!isPremium && onPlayAgain && (
+            <button
+              type="button"
+              onClick={() => setShowRewardedAd(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold hover:opacity-90 transition-opacity"
+            >
+              <Play className="w-5 h-5" />
+              Watch Ad for Extra Play
+            </button>
+          )}
           {onPlayAgain && (
             <button
               type="button"
               onClick={onPlayAgain}
-              className="flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold hover:opacity-90 transition-opacity"
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-cyan-500 to-purple-500 text-white font-bold hover:opacity-90 transition-opacity ${!isPremium ? 'w-full' : ''}`}
             >
               <RotateCcw className="w-5 h-5" />
               Play Again
@@ -81,6 +113,6 @@ export default function GameOverModal({
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
