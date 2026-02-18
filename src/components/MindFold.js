@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as Tone from 'tone';
+import { recordPlayedGame } from '../utils/userProgress';
 
 // --- Configuration ---
 const FACE_CONFIG = [
@@ -212,6 +213,7 @@ export default function MindFoldGame() {
     
     // Use state for audio initialization to force re-render
     const [audioReady, setAudioReady] = useState(false);
+    const recordedRef = useRef(false);
 
     const setupNewRound = useCallback(() => {
         const newCorrect = generateCorrectCube();
@@ -264,6 +266,23 @@ export default function MindFoldGame() {
         }
     }, [gameState, globalTimeLeft, handleGlobalTimeUp]);
 
+    // Record game progress when game ends
+    useEffect(() => {
+        if (gameState === 'result' && !recordedRef.current) {
+            recordedRef.current = true;
+            const accuracy = totalAttempts > 0 ? Math.round((score / totalAttempts) * 100) : 0;
+            const perfect = totalAttempts > 0 && score === totalAttempts;
+            recordPlayedGame('mind-fold', score * 10, { 
+                difficulty: 'beginner', 
+                accuracy,
+                perfect
+            });
+        }
+        if (gameState === 'start') {
+            recordedRef.current = false;
+        }
+    }, [gameState, score, totalAttempts]);
+
     const handleChoice = (index, chosenFaces) => {
         if (isCorrect !== null) return; // Already processing an answer
 
@@ -301,6 +320,7 @@ export default function MindFoldGame() {
         setScore(0);
         setTotalAttempts(0); // Reset attempts
         setGlobalTimeLeft(90);
+        recordedRef.current = false;
         setupNewRound();
     };
 

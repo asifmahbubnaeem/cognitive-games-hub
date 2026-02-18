@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import React, { useState, useEffect, useRef } from 'react';
 import { Brain, Zap, Trophy, Target, Clock, TrendingUp, Award, Link } from 'lucide-react';
+import { recordPlayedGame } from '../utils/userProgress';
+import Tutorial, { createNumberChainTutorial } from './onboarding/Tutorial';
 
 const OPERATIONS = [
   { symbol: '+', name: 'Add', fn: (a, b) => a + b },
@@ -45,6 +47,39 @@ export default function NumberChain() {
   const timerRef = useRef(null);
   const chainTimerRef = useRef(null);
   const timeoutTriggeredRef = useRef(false);
+  const recordedRef = useRef(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  useEffect(() => {
+    // Check if user has seen tutorial before
+    const tutorialKey = 'numberChain_tutorialSeen';
+    const hasSeenTutorial = localStorage.getItem(tutorialKey) === 'true';
+    if (!hasSeenTutorial && gameState === 'menu') {
+      setShowTutorial(true);
+    }
+  }, [gameState]);
+
+  const handleTutorialComplete = () => {
+    localStorage.setItem('numberChain_tutorialSeen', 'true');
+    setShowTutorial(false);
+  };
+
+  const handleTutorialSkip = () => {
+    localStorage.setItem('numberChain_tutorialSeen', 'true');
+    setShowTutorial(false);
+  };
+
+  useEffect(() => {
+    if (gameState === 'gameover' && !recordedRef.current) {
+      recordedRef.current = true;
+      const accuracy = chainHistory.length > 0 
+        ? Math.round((chainHistory.filter(c => c.isCorrect).length / chainHistory.length) * 100)
+        : 0;
+      const perfect = chainHistory.length > 0 && chainHistory.every(c => c.isCorrect);
+      recordPlayedGame('number-chain', score, { difficulty, accuracy, perfect });
+    }
+    if (gameState === 'menu') recordedRef.current = false;
+  }, [gameState, score, difficulty, chainHistory]);
 
   const playCorrectSound = () => {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -320,7 +355,15 @@ export default function NumberChain() {
 
   if (gameState === 'menu') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
+      <>
+        {showTutorial && (
+          <Tutorial
+            steps={createNumberChainTutorial()}
+            onComplete={handleTutorialComplete}
+            onSkip={handleTutorialSkip}
+          />
+        )}
+        <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
         <div className="text-center max-w-4xl">
           <div className="flex items-center justify-center gap-4 mb-8">
             <Link className="w-20 h-20 text-cyan-400 animate-pulse" />
@@ -384,6 +427,7 @@ export default function NumberChain() {
           </button>
         </div>
       </div>
+      </>
     );
   }
 

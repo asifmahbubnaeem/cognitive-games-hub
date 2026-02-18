@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, RotateCcw, Settings } from 'lucide-react';
+import { recordPlayedGame } from '../utils/userProgress';
 
 const COLORS = ['red', 'blue', 'green', 'yellow'];
 const COLOR_MAP = {
@@ -24,6 +25,15 @@ export default function ColorMatchGame() {
   
   const audioContext = useRef(null);
   const timerRef = useRef(null);
+  const recordedRef = useRef(false);
+
+  useEffect(() => {
+    if (gameState === 'ended' && !recordedRef.current) {
+      recordedRef.current = true;
+      recordPlayedGame('color-match', score);
+    }
+    if (gameState === 'menu') recordedRef.current = false;
+  }, [gameState, score]);
 
   // Initialize audio context
   useEffect(() => {

@@ -1,6 +1,11 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import NavigationBar from './components/NavigationBar';
+import OnboardingWrapper from './components/OnboardingWrapper';
+import AchievementManager from './components/progress/AchievementManager';
 import Home from './components/Home';
+import ProgressDashboard from './components/progress/ProgressDashboard';
+import AchievementsPage from './components/progress/AchievementsPage';
 import NumberChain from './components/NumberChain';
 import SpeedTruth from './components/SpeedTruth';
 import FocusFlow from './components/FocusFlow';
@@ -19,9 +24,15 @@ import MergeConquerGame from './components/MergeConquer';
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/number-chain" element={<NumberChain />} />
+      <NavigationBar />
+      <AchievementManager />
+      <main className="pt-14 min-h-screen">
+        <OnboardingWrapper>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/progress" element={<ProgressDashboard />} />
+            <Route path="/achievements" element={<AchievementsPage />} />
+            <Route path="/number-chain" element={<NumberChain />} />
         <Route path="/focus-flow" element={<FocusFlow />} />
         <Route path="/speed-truth" element={<SpeedTruth />} />
         <Route path="/speed-match" element={<SpeedMatch />} />
@@ -35,7 +46,9 @@ function App() {
         <Route path="/mind-fold" element={<MindFoldGame />} />
         <Route path="/neon-defender" element={<NeonDefenderGame />} />
         <Route path="/merge-conquer" element={<MergeConquerGame />} />
-      </Routes>
+          </Routes>
+        </OnboardingWrapper>
+      </main>
     </Router>
   );
 }

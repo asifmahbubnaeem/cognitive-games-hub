@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { recordPlayedGame } from '../utils/userProgress';
 
 // Icon components
 const Sparkles = ({ className }) => (
@@ -136,6 +137,7 @@ export default function MergeConquerGame() {
   const [message, setMessage] = useState('');
   const [timeLeft, setTimeLeft] = useState(90);
   const [mergeCount, setMergeCount] = useState(0);
+  const recordedRef = useRef(false);
 
   const playMergeSound = () => {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -229,6 +231,22 @@ export default function MergeConquerGame() {
     
     return () => clearInterval(timer);
   }, [gameState]);
+
+  // Record game progress when game ends
+  useEffect(() => {
+    if (gameState === 'gameover' && !recordedRef.current) {
+      recordedRef.current = true;
+      const accuracy = mergeCount > 0 ? Math.min(100, Math.round((mergeCount / (mergeCount + tiles.filter(t => t.type !== 'empty').length)) * 100)) : 0;
+      recordPlayedGame('merge-conquer', score, { 
+        difficulty: 'beginner', 
+        accuracy,
+        perfect: false
+      });
+    }
+    if (gameState === 'menu') {
+      recordedRef.current = false;
+    }
+  }, [gameState, score, mergeCount, tiles]);
 
   const handleTileClick = (index) => {
     if (gameState !== 'playing') return;
@@ -328,6 +346,7 @@ export default function MergeConquerGame() {
     setMergeCount(0);
     setTotalIncome(0);
     setGameState('playing');
+    recordedRef.current = false;
   };
 
   const backToMenu = () => {

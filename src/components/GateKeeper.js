@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, RotateCcw, Award } from 'lucide-react';
+import { recordPlayedGame } from '../utils/userProgress';
 
 const SHAPES = ['circle', 'triangle', 'rectangle'];
 const COLORS = ['red', 'blue', 'green'];
@@ -33,6 +34,9 @@ export default function GateKeeperGame() {
   const timerRef = useRef(null);
   const leftGateTimerRef = useRef(null);
   const rightGateTimerRef = useRef(null);
+  const recordedRef = useRef(false);
+  const [totalProcessed, setTotalProcessed] = useState(0);
+  const [correctProcessed, setCorrectProcessed] = useState(0);
 
   useEffect(() => {
     audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -131,6 +135,9 @@ export default function GateKeeperGame() {
     setRightObjectY(0);
     setLeftProcessed(false);
     setRightProcessed(false);
+    setTotalProcessed(0);
+    setCorrectProcessed(0);
+    recordedRef.current = false;
   };
 
   const startNewObject = (side) => {
@@ -206,6 +213,7 @@ export default function GateKeeperGame() {
   useEffect(() => {
     if (gameState === 'playing' && leftObject && leftObjectY >= 45 && !leftProcessed) {
       setLeftProcessed(true);
+      setTotalProcessed(prev => prev + 1);
       const shouldPass = shouldAllow(leftObject, 'left');
       
       if (shouldPass && !leftGateOpen) {
@@ -223,12 +231,14 @@ export default function GateKeeperGame() {
         setTimeout(() => setFeedback(null), 1000);
       } else {
         setScore(prev => prev + 5);
+        setCorrectProcessed(prev => prev + 1);
         playSound('pass');
       }
     }
 
     if (gameState === 'playing' && rightObject && rightObjectY >= 45 && !rightProcessed) {
       setRightProcessed(true);
+      setTotalProcessed(prev => prev + 1);
       const shouldPass = shouldAllow(rightObject, 'right');
       
       if (shouldPass && !rightGateOpen) {
@@ -246,6 +256,7 @@ export default function GateKeeperGame() {
         setTimeout(() => setFeedback(null), 1000);
       } else {
         setScore(prev => prev + 5);
+        setCorrectProcessed(prev => prev + 1);
         playSound('pass');
       }
     }
@@ -323,6 +334,23 @@ export default function GateKeeperGame() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [gameState, leftObject, rightObject]);
+
+  // Record game progress when game ends
+  useEffect(() => {
+    if (gameState === 'ended' && !recordedRef.current) {
+      recordedRef.current = true;
+      const accuracy = totalProcessed > 0 ? Math.round((correctProcessed / totalProcessed) * 100) : 0;
+      const perfect = accuracy === 100 && totalProcessed > 0;
+      recordPlayedGame('gate-keeper', score, { 
+        difficulty: 'beginner', 
+        accuracy,
+        perfect
+      });
+    }
+    if (gameState === 'menu') {
+      recordedRef.current = false;
+    }
+  }, [gameState, score, totalProcessed, correctProcessed]);
 
   const renderShape = (obj) => {
     if (!obj) return null;

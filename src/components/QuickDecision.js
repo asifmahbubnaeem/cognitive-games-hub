@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, RotateCcw, Award } from 'lucide-react';
+import { recordPlayedGame } from '../utils/userProgress';
 
 const FRUITS = {
   apple: { emoji: '🍎', name: 'Apple' },
@@ -23,6 +24,9 @@ export default function QuickDecisionGame() {
   
   const audioContext = useRef(null);
   const timerRef = useRef(null);
+  const recordedRef = useRef(false);
+  const [totalAnswers, setTotalAnswers] = useState(0);
+  const [correctAnswers, setCorrectAnswers] = useState(0);
 
   useEffect(() => {
     audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -145,6 +149,9 @@ export default function QuickDecisionGame() {
     setGameState('playing');
     setScore(0);
     setTimeLeft(60);
+    setTotalAnswers(0);
+    setCorrectAnswers(0);
+    recordedRef.current = false;
     generateNewRound();
   };
 
@@ -176,6 +183,7 @@ export default function QuickDecisionGame() {
     if (isAnswering || gameState !== 'playing') return;
     
     setIsAnswering(true);
+    setTotalAnswers(prev => prev + 1);
     const leftWeight = calculateWeight(leftFruits);
     const rightWeight = calculateWeight(rightFruits);
     const correctSide = leftWeight > rightWeight ? 'left' : rightWeight > leftWeight ? 'right' : 'equal';
@@ -183,6 +191,7 @@ export default function QuickDecisionGame() {
     
     if (isCorrect) {
       setScore(prev => prev + 10);
+      setCorrectAnswers(prev => prev + 1);
       setFeedback('correct');
       playSound('correct');
     } else {
@@ -219,6 +228,23 @@ export default function QuickDecisionGame() {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [gameState, isAnswering, leftFruits, rightFruits, weights]);
+
+  // Record game progress when game ends
+  useEffect(() => {
+    if (gameState === 'ended' && !recordedRef.current) {
+      recordedRef.current = true;
+      const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+      const perfect = accuracy === 100 && totalAnswers > 0;
+      recordPlayedGame('quick-decision', score, { 
+        difficulty: 'beginner', 
+        accuracy,
+        perfect
+      });
+    }
+    if (gameState === 'menu') {
+      recordedRef.current = false;
+    }
+  }, [gameState, score, totalAnswers, correctAnswers]);
 
   if (gameState === 'menu') {
     return (

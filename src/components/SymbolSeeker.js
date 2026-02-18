@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as Tone from 'tone';
+import { recordPlayedGame } from '../utils/userProgress';
 
 // --- Configs ---
 const COLORS = [
@@ -167,8 +168,12 @@ export default function SymbolSeekerGame() {
     
     const [quizOptions, setQuizOptions] = useState([]);
     const [modalState, setModalState] = useState({ isOpen: false, title: "", message: "", buttonText: "" });
+    const [score, setScore] = useState(0);
+    const [levelsCompleted, setLevelsCompleted] = useState(0);
+    const [totalAttempts, setTotalAttempts] = useState(0);
 
     const ruleSet = useRef(null);
+    const recordedRef = useRef(false);
     // FIX: Changed audioInitialized from useRef to useState to ensure
     // the component re-renders when the start button is clicked.
     const [audioInitialized, setAudioInitialized] = useState(false);
@@ -210,7 +215,13 @@ export default function SymbolSeekerGame() {
         setLives(LIVES_START);
         setGameState('playing');
         setMessage("Find 5 correct shapes to identify the rule.");
-    }, []);
+        
+        // Reset tracking on first game
+        if (levelsCompleted === 0 && totalAttempts === 0) {
+            setScore(0);
+            recordedRef.current = false;
+        }
+    }, [levelsCompleted, totalAttempts]);
 
     // Load first game
     useEffect(() => {
@@ -223,6 +234,7 @@ export default function SymbolSeekerGame() {
         if (gameState !== 'playing' || clickedShape.isFound || !audioInitialized) return;
 
         const { correctRule } = ruleSet.current;
+        setTotalAttempts(prev => prev + 1);
 
         if (correctRule.test(clickedShape)) {
             // --- CORRECT CLICK ---
@@ -282,6 +294,8 @@ export default function SymbolSeekerGame() {
         if (guess === correctRule.desc) {
             // --- WON ---
             setGameState('result');
+            setLevelsCompleted(prev => prev + 1);
+            setScore(prev => prev + 100);
             sfx.win?.triggerAttackRelease(["C4", "E4", "G4", "C5"], "0.8");
              setModalState({
                 isOpen: true,
@@ -304,6 +318,18 @@ export default function SymbolSeekerGame() {
     
     const handleModalClose = () => {
         setModalState({ isOpen: false, title: "", message: "", buttonText: "" });
+        
+        // Record progress if game session ended (after multiple levels)
+        if (gameState === 'result' && levelsCompleted + (totalAttempts > 0 ? 1 : 0) >= 3 && !recordedRef.current) {
+            recordedRef.current = true;
+            const accuracy = totalAttempts > 0 ? Math.round((foundCount / totalAttempts) * 100) : 0;
+            recordPlayedGame('symbol-seeker', score, { 
+                difficulty: 'beginner', 
+                accuracy,
+                perfect: false
+            });
+        }
+        
         setupNewGame();
     };
     

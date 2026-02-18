@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Brain, Target, Zap, Trophy, Clock, Users, Medal } from 'lucide-react';
+import { recordPlayedGame } from '../utils/userProgress';
 
 const COLORS = [
   { name: 'RED', value: '#ef4444', letters: 3 },
@@ -23,6 +24,17 @@ export default function FocusFlow() {
 
   const timerRef = useRef(null);
   const circleTimerRef = useRef(null);
+  const recordedRef = useRef(false);
+
+  useEffect(() => {
+    if (gameState === 'gameover' && !recordedRef.current) {
+      recordedRef.current = true;
+      const accuracy = totalClicks > 0 ? Math.round((correctClicks / totalClicks) * 100) : 0;
+      const perfect = totalClicks > 0 && correctClicks === totalClicks;
+      recordPlayedGame('focus-flow', score, { difficulty: 'beginner', accuracy, perfect });
+    }
+    if (gameState === 'menu') recordedRef.current = false;
+  }, [gameState, score, totalClicks, correctClicks]);
 
   const playCorrectSound = () => {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();

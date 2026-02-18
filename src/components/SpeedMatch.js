@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Brain, Clock, Trophy, Target, TrendingUp, Zap } from 'lucide-react';
+import { recordPlayedGame } from '../utils/userProgress';
 
 const SHAPES = [
   { name: 'circle', color: '#ef4444', render: () => '●' },
@@ -23,6 +24,7 @@ export default function SpeedMatch() {
   const [isAnimating, setIsAnimating] = useState(false);
 
   const timerRef = useRef(null);
+  const recordedRef = useRef(false);
 
   const playSlideSound = () => {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -170,6 +172,23 @@ export default function SpeedMatch() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [gameState, currentShape, previousShape, isAnimating, position, streak, maxStreak]);
 
+  // Record game progress when game ends
+  useEffect(() => {
+    if (gameState === 'gameover' && !recordedRef.current) {
+      recordedRef.current = true;
+      const accuracy = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
+      const perfect = accuracy === 100 && totalAnswers > 0;
+      recordPlayedGame('speed-match', score, { 
+        difficulty: 'beginner', 
+        accuracy,
+        perfect
+      });
+    }
+    if (gameState === 'menu') {
+      recordedRef.current = false;
+    }
+  }, [gameState, score, totalAnswers, correctAnswers]);
+
   const startGame = () => {
     setScore(0);
     setStreak(0);
@@ -183,6 +202,7 @@ export default function SpeedMatch() {
     setPosition('right');
     setCurrentShape(null);
     setGameState('playing');
+    recordedRef.current = false;
     
     setTimeout(() => {
       spawnNewShape();

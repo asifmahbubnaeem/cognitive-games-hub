@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Play, RotateCcw, Brain } from 'lucide-react';
+import { recordPlayedGame } from '../utils/userProgress';
 
 const OPERATIONS = ['+', '-', '*', '/'];
 const BUBBLE_COLORS = [
@@ -18,12 +19,15 @@ export default function WaterBubbleGame() {
   const [bubbles, setBubbles] = useState([]);
   const [inputValue, setInputValue] = useState('');
   const [burstingBubbles, setBurstingBubbles] = useState([]);
+  const [totalBubblesCreated, setTotalBubblesCreated] = useState(0);
+  const [bubblesPopped, setBubblesPopped] = useState(0);
   
   const audioContext = useRef(null);
   const timerRef = useRef(null);
   const bubbleTimerRef = useRef(null);
   const backgroundSoundRef = useRef(null);
   const inputRef = useRef(null);
+  const recordedRef = useRef(false);
 
   useEffect(() => {
     audioContext.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -237,6 +241,7 @@ export default function WaterBubbleGame() {
     };
     
     setBubbles(prev => [...prev, newBubble]);
+    setTotalBubblesCreated(prev => prev + 1);
     playWaterDropSound();
   };
 
@@ -247,6 +252,9 @@ export default function WaterBubbleGame() {
     setBubbles([]);
     setBurstingBubbles([]);
     setInputValue('');
+    setTotalBubblesCreated(0);
+    setBubblesPopped(0);
+    recordedRef.current = false;
     startBackgroundSound();
     
     setTimeout(() => {
@@ -300,6 +308,35 @@ export default function WaterBubbleGame() {
     }
   }, [gameState]);
 
+  // Record game progress when game ends
+  useEffect(() => {
+    if (gameState === 'ended' && !recordedRef.current) {
+      recordedRef.current = true;
+      // Calculate accuracy based on bubbles popped vs total created
+      const accuracy = totalBubblesCreated > 0
+        ? Math.round((bubblesPopped / totalBubblesCreated) * 100)
+        : 0;
+      
+      // Determine difficulty based on average score per bubble
+      const avgScorePerBubble = bubblesPopped > 0 ? score / bubblesPopped : 0;
+      let difficulty = 'beginner';
+      if (avgScorePerBubble >= 12) {
+        difficulty = 'expert';
+      } else if (avgScorePerBubble >= 8) {
+        difficulty = 'intermediate';
+      }
+      
+      recordPlayedGame('water-bubble', score, { 
+        difficulty, 
+        accuracy,
+        perfect: accuracy === 100 && bubblesPopped > 0
+      });
+    }
+    if (gameState === 'menu') {
+      recordedRef.current = false;
+    }
+  }, [gameState, score, totalBubblesCreated, bubblesPopped]);
+
   const checkAnswer = (value) => {
     if (!value.trim() || gameState !== 'playing') return;
     
@@ -315,6 +352,7 @@ export default function WaterBubbleGame() {
       const points = matchingBubble.difficulty === 'easy' ? 5 : 
                      matchingBubble.difficulty === 'intermediate' ? 10 : 15;
       setScore(prev => prev + points);
+      setBubblesPopped(prev => prev + 1);
       
       setBurstingBubbles(prev => [...prev, matchingBubble.id]);
       

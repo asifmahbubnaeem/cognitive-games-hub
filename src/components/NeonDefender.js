@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { recordPlayedGame } from '../utils/userProgress';
 
 // Icon components (or import from lucide-react if available)
 const Zap = ({ className }) => (
@@ -35,6 +36,7 @@ export default function NeonDefenderGame() {
   const [highScore, setHighScore] = useState(0);
   const [health, setHealth] = useState(3);
   const [gameSpeed, setGameSpeed] = useState(1);
+  const recordedRef = useRef(false);
 
   const gameRef = useRef({
     player: { x: 400, y: 300, radius: 15, speed: 6 },
@@ -298,6 +300,7 @@ export default function NeonDefenderGame() {
     setScore(0);
     setHealth(3);
     setGameState('playing');
+    recordedRef.current = false;
   };
 
   if (gameState === 'menu') {
@@ -351,6 +354,21 @@ export default function NeonDefenderGame() {
       </div>
     );
   }
+
+  // Record game progress when game ends
+  useEffect(() => {
+    if (gameState === 'gameover' && !recordedRef.current) {
+      recordedRef.current = true;
+      recordPlayedGame('neon-defender', score, { 
+        difficulty: 'beginner', 
+        accuracy: 0,
+        perfect: false
+      });
+    }
+    if (gameState === 'menu') {
+      recordedRef.current = false;
+    }
+  }, [gameState, score]);
 
   if (gameState === 'gameover') {
     if (score > highScore) {

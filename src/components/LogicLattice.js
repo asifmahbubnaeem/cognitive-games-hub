@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as Tone from 'tone';
+import { recordPlayedGame } from '../utils/userProgress';
 
 // --- Styles Component ---
 // We place the non-Tailwind styles here.
@@ -224,6 +225,10 @@ export default function LogicLatticeGame() {
     const [caseId, setCaseId] = useState(0);
     const [isAccusing, setIsAccusing] = useState(false);
     const [isGameOver, setIsGameOver] = useState(true);
+    const [score, setScore] = useState(0);
+    const [casesSolved, setCasesSolved] = useState(0);
+    const [casesFailed, setCasesFailed] = useState(0);
+    const recordedRef = useRef(false);
     const [modalState, setModalState] = useState({
         isOpen: true,
         title: "Welcome, Detective",
@@ -322,7 +327,15 @@ export default function LogicLatticeGame() {
         generateSuspectsAndClues();
         setTimeLeft(60);
         setModalState(s => ({ ...s, isOpen: false }));
-    }, [initAudio, generateSuspectsAndClues]);
+        
+        // Reset tracking on new game session
+        if (caseId === 0) {
+            setScore(0);
+            setCasesSolved(0);
+            setCasesFailed(0);
+            recordedRef.current = false;
+        }
+    }, [initAudio, generateSuspectsAndClues, caseId]);
     
     const endGame = useCallback((accusedSuspect) => {
         clearInterval(timerInterval.current);
@@ -330,6 +343,7 @@ export default function LogicLatticeGame() {
         setIsAccusing(false);
         
         if (!accusedSuspect) {
+            setCasesFailed(prev => prev + 1);
             sfx.current?.lose.triggerAttackRelease("A2", "1.0");
             setModalState({
                 isOpen: true, title: "CASE FAILED",
@@ -337,6 +351,8 @@ export default function LogicLatticeGame() {
                 buttonText: "Try New Case", isWin: false
             });
         } else if (accusedSuspect.isGuilty) {
+            setCasesSolved(prev => prev + 1);
+            setScore(prev => prev + 100 + timeLeft);
             sfx.current?.win.triggerAttackRelease(["C4", "E4", "G4", "C5"], "0.5s");
             setModalState({
                 isOpen: true, title: "CASE CLOSED",
@@ -344,6 +360,7 @@ export default function LogicLatticeGame() {
                 buttonText: "Next Case", isWin: true
             });
         } else {
+            setCasesFailed(prev => prev + 1);
             sfx.current?.lose.triggerAttackRelease("A2", "1.0");
             setModalState({
                 isOpen: true, title: "CASE FAILED",
@@ -372,6 +389,26 @@ export default function LogicLatticeGame() {
         }
         return () => clearInterval(timerInterval.current);
     }, [isGameOver, endGame]);
+
+    // Record game progress when session ends (after multiple cases)
+    useEffect(() => {
+        // Record when user closes modal after playing multiple cases
+        // We'll record when they've played at least one case and are going back to menu
+        if (isGameOver && caseId > 0 && !recordedRef.current && casesSolved + casesFailed > 0) {
+            // Only record if they've completed at least 3 cases or failed 3 cases
+            if (casesSolved + casesFailed >= 3) {
+                recordedRef.current = true;
+                const totalCases = casesSolved + casesFailed;
+                const accuracy = totalCases > 0 ? Math.round((casesSolved / totalCases) * 100) : 0;
+                const perfect = casesFailed === 0 && casesSolved > 0;
+                recordPlayedGame('logic-lattice', score, { 
+                    difficulty: 'beginner', 
+                    accuracy,
+                    perfect
+                });
+            }
+        }
+    }, [isGameOver, caseId, casesSolved, casesFailed, score]);
     
     // --- Event Handlers ---
     

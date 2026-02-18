@@ -1,255 +1,185 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Brain, Zap, Target, Link as LinkIcon, Crosshair, Grid3x3 } from 'lucide-react';
+import { Brain, Flame, Trophy, Gamepad2, ChevronRight, BarChart3, Award } from 'lucide-react';
+import { games, getGameById, GAME_CATEGORIES } from '../config/games';
+import { getStreak, getOverallScore, getGamesPlayedToday, getRecentlyPlayed } from '../utils/userProgress';
+import { getCurrentLevel } from '../utils/leveling';
+import { getUnlockedAchievements } from '../utils/achievements';
 
-const games = [
-  {
-    id: 'number-chain',
-    title: 'Number Chain',
-    subtitle: 'Mental Math Trainer',
-    description: 'Calculate chains of operations in your head. Master sequential processing and working memory.',
-    icon: LinkIcon,
-    color: 'from-cyan-500 to-purple-500',
-    skills: ['Mental Math', 'Working Memory', 'Sequential Processing'],
-    path: '/number-chain'
-  },
-  {
-    id: 'speed-truth',
-    title: 'Speed Truth',
-    subtitle: 'Processing Speed Trainer',
-    description: 'Make split-second decisions under time pressure. Different colors demand different speeds.',
-    icon: Zap,
-    color: 'from-yellow-500 to-red-500',
-    skills: ['Processing Speed', 'Decision Making', 'Impulse Control'],
-    path: '/speed-truth'
-  },
-  {
-    id: 'focus-flow',
-    title: 'Focus Flow',
-    subtitle: 'Attention Trainer',
-    description: 'Match numbers with color letter counts. Train selective attention and impulse control.',
-    icon: Target,
-    color: 'from-green-500 to-cyan-500',
-    skills: ['Selective Attention', 'Working Memory', 'Impulse Control'],
-    path: '/focus-flow'
-  },
-  {
-    id: 'speed-match',
-    title: 'Speed Match',
-    subtitle: 'Processing Speed Trainer',
-    description: 'Make split-second decisions under time pressure. Different shapes should be checked if matched/mismatched.',
-    icon: Brain,
-    color: 'from-purple-500 to-pink-500',
-    skills: ['Working Memory', 'Pattern Recognition', 'Focus'],
-    path: '/speed-match'
-  },
-  {
-    id: 'color-match',
-    title: 'Color Match',
-    subtitle: 'Reaction & Processing Speed',
-    description: 'Fast-paced game. Improve hand-eye coordination and reaction time.',
-    icon: Crosshair,
-    color: 'from-blue-500 to-purple-500',
-    skills: ['Reaction Time', 'Pattern Recognition', 'Focus'],
-    path: '/color-match'
-  },
-  {
-    id: 'quick-decision',
-    title: 'Quick Decision',
-    subtitle: 'Strategy & Planning',
-    description: 'Merge tiles strategically. Build planning skills and strategic thinking.',
-    icon: Grid3x3,
-    color: 'from-orange-500 to-red-500',
-    skills: ['Strategic Planning', 'Resource Management', 'Pattern Recognition'],
-    path: '/quick-decision'
-  },
-  {
-    id: 'water-bubble',
-    title: 'Water Bubble',
-    subtitle: 'Reaction & Math calculation',
-    description: 'Quick Math calculation. Improve mental calculation reaction time.',
-    icon: Grid3x3,
-    color: 'from-blue-500 to-purple-500',
-    skills: ['Mental calculation', 'logical thinking'],
-    path: '/water-bubble'
-  },
-  {
-    id: 'logic-lattice',
-    title: 'Sherlock, learn theory of deduction',
-    subtitle: 'Attention & Logical reasoning Trainer',
-    description: 'Catch the Culprit. Solve the problem using logical reasoning & attention.',
-    icon: Target,
-    color: 'from-green-500 to-cyan-500',
-    skills: ['Selective Attention', 'Working Memory', 'Logical reasoning'],
-    path: '/logic-lattice'
-  },
-  {
-    id: 'glyph-walker',
-    title: 'Glyph Walker',
-    subtitle: 'Spatial Imagination Trainer',
-    description: 'Make split-second decisions under time pressure. Different shapes should be checked if matched/mismatched.',
-    icon: Brain,
-    color: 'from-purple-500 to-pink-500',
-    skills: ['Working Memory', 'Spatial analysis', 'Critcal Thinking', 'Puzzle solve'],
-    path: '/glyph-walker'
-  },
-  {
-    id: 'gate-keeper',
-    title: 'Gate Keeper',
-    subtitle: 'Multi tasking Trainer',
-    description: 'Enhance multi tasking capability, force to think process multiple tasks',
-    icon: Brain,
-    color: 'from-orange-500 to-red-500',
-    skills: ['Working Memory', 'Pattern Recognition', 'Focus'],
-    path: '/gate-keeper'
-  },
-  {
-    id: 'symbol-seeker',
-    title: 'Symbol Seeker',
-    subtitle: 'Intiution Building Game',
-    description: 'Inductive Reasoning (Pattern Recognition).The Concept: A "trial and error" puzzle. Each level, the game secretly decides on a "rule" (e.g., "Must be a Circle" or "Must be Blue AND Square"). The screen fills with dozens of random, colorful shapes.',
-    icon: Grid3x3,
-    color: 'from-green-500 to-blue-500',
-    skills: ['Strategic Planning', 'Resource Management', 'Pattern Recognition'],
-    path: '/symbol-seeker'
-  },
-  {
-    id: 'mind-fold',
-    title: 'Mind Fold',
-    subtitle: 'Spatial reasoning puzzle',
-    description: 'A 3D puzzle game based on those paper-folding IQ tests. You are presented with a 2D "net" (an unfolded shape) and a 3D "target" shape. Your goal is to mentally (or physically) fold the net to match the target',
-    icon: Brain,
-    color: 'from-blue-500 to-purple-500',
-    skills: ['Working Memory', 'Imagination', 'Intiution'],
-    path: '/mind-fold'
-  },
-  { 
-    id: 'neon-defender',
-    title: 'Neon Defender',
-    subtitle: 'Reaction & Coordination',
-    description: 'Fast-paced shooting game. Improve hand-eye coordination and reaction time.',
-    icon: Zap,
-    color: 'from-purple-500 to-pink-500',
-    skills: ['Reaction Time', 'Hand-Eye Coordination', 'Spatial Awareness'],
-    path: '/neon-defender'
-  },
-  {
-    id: 'merge-conquer',
-    title: 'Merge & Conquer',
-    subtitle: 'Strategy & Planning',
-    description: 'Merge tiles strategically. Build planning skills and strategic thinking.',
-    icon: Grid3x3,
-    color: 'from-orange-500 to-red-500',
-    skills: ['Strategic Planning', 'Resource Management', 'Pattern Recognition'],
-    path: '/merge-conquer'
-  }
-  // {
-  //   id: 'pattern-break',
-  //   title: 'Pattern Break',
-  //   subtitle: 'Memory Trainer',
-  //   description: 'Memorize patterns and catch breaks. Enhance working memory and pattern recognition.',
-  //   icon: Brain,
-  //   color: 'from-purple-500 to-pink-500',
-  //   skills: ['Working Memory', 'Pattern Recognition', 'Focus'],
-  //   path: '/pattern-break'
-  // },
-  // {
-  //   id: 'neon-defender',
-  //   title: 'Neon Defender',
-  //   subtitle: 'Reaction & Coordination',
-  //   description: 'Fast-paced shooting game. Improve hand-eye coordination and reaction time.',
-  //   icon: Crosshair,
-  //   color: 'from-blue-500 to-purple-500',
-  //   skills: ['Reaction Time', 'Hand-Eye Coordination', 'Spatial Awareness'],
-  //   path: '/neon-defender'
-  // },
-  // {
-  //   id: 'merge-conquer',
-  //   title: 'Merge & Conquer',
-  //   subtitle: 'Strategy & Planning',
-  //   description: 'Merge tiles strategically. Build planning skills and strategic thinking.',
-  //   icon: Grid3x3,
-  //   color: 'from-orange-500 to-red-500',
-  //   skills: ['Strategic Planning', 'Resource Management', 'Pattern Recognition'],
-  //   path: '/merge-conquer'
-  // }
-];
+function GameCard({ game, compact = false }) {
+  return (
+    <Link to={game.path} className="group block">
+      <div
+        className={`bg-slate-800 rounded-2xl border-4 border-transparent hover:border-white transition-all duration-300 transform hover:scale-[1.02] hover:shadow-2xl h-full flex flex-col ${compact ? 'p-5' : 'p-8'}`}
+      >
+        <div className={`rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center mb-4 group-hover:rotate-6 transition-transform ${compact ? 'w-14 h-14' : 'w-20 h-20 mb-6'}`}>
+          <game.icon className={compact ? 'w-8 h-8 text-white' : 'w-12 h-12 text-white'} />
+        </div>
+        <h2 className={`font-bold bg-gradient-to-r ${game.color} bg-clip-text text-transparent ${compact ? 'text-xl mb-1' : 'text-3xl mb-2'}`}>
+          {game.title}
+        </h2>
+        <p className={`text-gray-400 ${compact ? 'text-sm mb-2' : 'text-xl mb-4'}`}>{game.subtitle}</p>
+        {!compact && (
+          <>
+            <p className="text-gray-300 mb-6 flex-grow line-clamp-2">{game.description}</p>
+            <div className="flex flex-wrap gap-2 mb-4">
+              {game.skills.slice(0, 3).map((skill, index) => (
+                <span key={index} className="px-3 py-1 bg-slate-700 text-cyan-400 text-sm rounded-full">
+                  {skill}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+        <span className={`inline-flex items-center justify-center gap-2 w-full bg-gradient-to-r ${game.color} text-white font-bold rounded-xl transition-shadow hover:shadow-lg ${compact ? 'py-2.5 text-sm' : 'py-4 text-lg'}`}>
+          {compact ? 'Play' : 'PLAY NOW'}
+          <ChevronRight className="w-4 h-4" />
+        </span>
+      </div>
+    </Link>
+  );
+}
 
 export default function Home() {
+  const [categoryFilter, setCategoryFilter] = useState('all');
+
+  const streak = getStreak();
+  const overallScore = getOverallScore();
+  const gamesToday = getGamesPlayedToday();
+  const recentlyPlayedIds = getRecentlyPlayed();
+  const level = getCurrentLevel();
+  const unlockedAchievements = getUnlockedAchievements();
+
+  const recommendedGames = useMemo(() => games.slice(0, 3), []);
+  const lastPlayedGame = useMemo(() => {
+    const id = recentlyPlayedIds[0];
+    return id ? getGameById(id) : null;
+  }, [recentlyPlayedIds]);
+  const recentGames = useMemo(() => {
+    return recentlyPlayedIds
+      .map((id) => getGameById(id))
+      .filter(Boolean)
+      .slice(0, 3);
+  }, [recentlyPlayedIds]);
+
+  const filteredGames = useMemo(() => {
+    if (categoryFilter === 'all') return games;
+    return games.filter((g) => g.category === categoryFilter);
+  }, [categoryFilter]);
+
+  const categories = useMemo(() => ['all', ...Object.keys(GAME_CATEGORIES)], []);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-indigo-900 pt-6 pb-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <Brain className="w-20 h-20 text-cyan-400 animate-pulse" />
-            <h1 className="text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
+        {/* Hero + Quick Stats */}
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            <Brain className="w-16 h-16 sm:w-20 sm:h-20 text-cyan-400 animate-pulse flex-shrink-0" />
+            <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400">
               Cognitive Games Hub
             </h1>
           </div>
-          <p className="text-2xl text-gray-300 mb-4">
+          <p className="text-lg sm:text-2xl text-gray-300 mb-6">
             Train Your Brain with Science-Backed Games
           </p>
-          <p className="text-lg text-gray-400 max-w-3xl mx-auto">
-            A collection of engaging games designed to improve cognitive abilities including 
-            memory, attention, processing speed, and strategic thinking.
-          </p>
-        </div>
 
-        {/* Games Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {games.map((game) => (
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-6">
             <Link
-              key={game.id}
-              to={game.path}
-              className="group"
+              to="/progress"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-600/50 hover:border-cyan-400/50 transition-colors cursor-pointer"
             >
-              <div className={`bg-slate-800 rounded-2xl p-8 border-4 border-transparent hover:border-white transition-all duration-300 transform hover:scale-105 hover:shadow-2xl h-full flex flex-col`}>
-                {/* Icon */}
-                <div className={`w-20 h-20 rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center mb-6 group-hover:rotate-12 transition-transform`}>
-                  <game.icon className="w-12 h-12 text-white" />
-                </div>
-
-                {/* Title */}
-                <h2 className={`text-3xl font-bold mb-2 bg-gradient-to-r ${game.color} bg-clip-text text-transparent`}>
-                  {game.title}
-                </h2>
-                <p className="text-xl text-gray-400 mb-4">{game.subtitle}</p>
-
-                {/* Description */}
-                <p className="text-gray-300 mb-6 flex-grow">
-                  {game.description}
-                </p>
-
-                {/* Skills */}
-                <div className="flex flex-wrap gap-2">
-                  {game.skills.map((skill, index) => (
-                    <span
-                      key={index}
-                      className="px-3 py-1 bg-slate-700 text-cyan-400 text-sm rounded-full"
-                    >
-                      {skill}
-                    </span>
-                  ))}
-                </div>
-
-                {/* Play Button */}
-                <button className={`mt-6 w-full bg-gradient-to-r ${game.color} text-white py-4 rounded-xl font-bold text-lg hover:shadow-lg transition-shadow`}>
-                  PLAY NOW
-                </button>
-              </div>
+              <span className="text-xs text-cyan-400 font-bold">Lv.{level}</span>
             </Link>
-          ))}
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-600/50">
+              <Flame className="w-5 h-5 text-orange-400" />
+              <span className="text-white font-semibold tabular-nums">{streak}</span>
+              <span className="text-gray-400 text-sm hidden sm:inline">day streak</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-600/50">
+              <Trophy className="w-5 h-5 text-yellow-400" />
+              <span className="text-white font-semibold tabular-nums">{overallScore.toLocaleString()}</span>
+              <span className="text-gray-400 text-sm hidden sm:inline">score</span>
+            </div>
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-600/50">
+              <Gamepad2 className="w-5 h-5 text-cyan-400" />
+              <span className="text-white font-semibold tabular-nums">{gamesToday}</span>
+              <span className="text-gray-400 text-sm hidden sm:inline">today</span>
+            </div>
+            <Link
+              to="/achievements"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-800/80 border border-slate-600/50 hover:border-yellow-400/50 transition-colors cursor-pointer"
+            >
+              <Award className="w-5 h-5 text-yellow-400" />
+              <span className="text-white font-semibold tabular-nums">{unlockedAchievements.length}</span>
+            </Link>
+          </div>
         </div>
+
+        {/* Recommended For You */}
+        <section className="mb-12">
+          <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+            <span className="text-cyan-400">Recommended for you</span>
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {recommendedGames.map((game) => (
+              <GameCard key={game.id} game={game} />
+            ))}
+          </div>
+        </section>
+
+        {/* Continue Training (last played) */}
+        {lastPlayedGame && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-white mb-4">Continue training</h2>
+            <div className="max-w-sm">
+              <GameCard game={lastPlayedGame} compact />
+            </div>
+          </section>
+        )}
+
+        {/* Recently Played (if more than one) */}
+        {recentGames.length > 1 && (
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold text-white mb-4">Recently played</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {recentGames.slice(1).map((game) => game && <GameCard key={game.id} game={game} compact />)}
+            </div>
+          </section>
+        )}
+
+        {/* All Games + Filter */}
+        <section>
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            <h2 className="text-2xl font-bold text-white">All games</h2>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setCategoryFilter(cat)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    categoryFilter === cat
+                      ? 'bg-cyan-500 text-white'
+                      : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
+                  }`}
+                >
+                  {cat === 'all' ? 'All' : GAME_CATEGORIES[cat]}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredGames.map((game) => (
+              <GameCard key={game.id} game={game} />
+            ))}
+          </div>
+        </section>
 
         {/* Footer */}
         <div className="mt-16 text-center text-gray-400">
-          <p className="text-lg">
-            🧠 Train daily for 10-15 minutes to see cognitive improvements
-          </p>
-          <p className="text-sm mt-2">
-            All games are designed based on cognitive science research
-          </p>
+          <p className="text-lg">Train daily for 10–15 minutes to see cognitive improvements.</p>
+          <p className="text-sm mt-2">All games are designed based on cognitive science research.</p>
         </div>
       </div>
     </div>

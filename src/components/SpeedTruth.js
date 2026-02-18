@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Brain, Zap, Trophy, Clock, Target, TrendingUp, AlertCircle } from 'lucide-react';
+import { recordPlayedGame } from '../utils/userProgress';
 
 // ============================================
 // FACTS DATABASE - Easy to Update!
@@ -120,6 +121,15 @@ export default function SpeedTruth() {
   const [questionHistory, setQuestionHistory] = useState([]);
 
   const timeoutRef = useRef(null);
+  const recordedRef = useRef(false);
+
+  useEffect(() => {
+    if (gameState === 'gameover' && !recordedRef.current) {
+      recordedRef.current = true;
+      recordPlayedGame('speed-truth', score);
+    }
+    if (gameState === 'menu') recordedRef.current = false;
+  }, [gameState, score]);
 
   const playCorrectSound = () => {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
